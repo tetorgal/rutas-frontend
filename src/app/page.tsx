@@ -46,7 +46,7 @@ function MapLabelTuner() {
           map.setPaintProperty(
             layer.id,
             'text-halo-color',
-            'rgba(255, 255, 255, 0.9)',
+            'rgba(165, 165, 165, 0.9)',
           );
           map.setPaintProperty(layer.id, 'text-halo-width', 1.2);
         } catch {
@@ -148,8 +148,8 @@ export default function SupervisorDashboard() {
                     <div className="bg-white text-xs font-bold px-2 py-1 rounded shadow-md mb-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-gray-200">
                       {ubi.nombre}
                     </div>
-                    <div className="rounded-full bg-white p-1.5 shadow-lg ring-1 ring-black/10">
-                      <MapPin className="h-4 w-4 text-emerald-600" />
+                    <div >
+                      <MapPin className="h-5 w-5 text-amber-100" fill='orange' focusable  />
                     </div>
                   </div>
                 </MarkerContent>
