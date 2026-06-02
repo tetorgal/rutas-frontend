@@ -1,19 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useTheme } from 'next-themes';
+import { useUbicaciones } from '@/hooks/useApi';
 import { Map, MapControls, MapMarker, MarkerContent, useMap } from '@/components/ui/map';
 import { Card } from '@/components/ui/card';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import { SidebarInset, SidebarRail, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/built/Sidebar';
 import { MapPin } from 'lucide-react';
-
-// Definimos la interfaz basada en tu modelo de Prisma
-interface Ubicacion {
-  id: string;
-  nombre: string;
-  latitud: number;
-  longitud: number;
-  nombreVendedor: string;
-  urlOriginal: string;
-}
 
 function MapLabelTuner() {
   const { map, isLoaded } = useMap();
@@ -67,98 +69,83 @@ function MapLabelTuner() {
 }
 
 export default function SupervisorDashboard() {
-  const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const { theme, resolvedTheme } = useTheme();
+  const { data: ubicaciones = [], isLoading: cargando } = useUbicaciones();
   const defaultCenter: [number, number] = [-104.6901381, 24.0080354];
   const mapCenter: [number, number] = ubicaciones.length
     ? [ubicaciones[0].longitud, ubicaciones[0].latitud]
     : defaultCenter;
 
-  useEffect(() => {
-    // Llamada a tu backend en NestJS
-    fetch('http://localhost:3000/ubicaciones')
-      .then((res) => res.json())
-      .then((data) => {
-        setUbicaciones(data);
-        setCargando(false);
-      })
-      .catch((err) => {
-        console.error('Error al cargar ubicaciones:', err);
-        setCargando(false);
-      });
-  }, []);
-
   return (
-    <div className="flex h-screen w-full bg-gray-50 font-sans">
-      
-      {/* Sidebar - Lista de Puntos */}
-      <aside className="w-1/3 max-w-sm bg-white border-r border-gray-200 flex flex-col shadow-sm z-10">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-800">Rutas Chocolates SA</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {ubicaciones.length} ubicaciones capturadas hoy
-          </p>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {cargando ? (
-            <p className="text-center text-gray-400 mt-10 animate-pulse">Cargando puntos...</p>
-          ) : (
-            ubicaciones.map((ubi) => (
-              <div key={ubi.id} className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer">
-                <h3 className="font-semibold text-gray-800">{ubi.nombre}</h3>
-                <div className="text-xs text-gray-500 mt-2 flex justify-between">
-                  <span>👤 {ubi.nombreVendedor}</span>
-                  <a 
-                    href={ubi.urlOriginal} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="text-blue-500 hover:underline"
-                  >
-                    Ver en Maps
-                  </a>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+    <>
+      <AppSidebar   />
+      <SidebarRail />
+      <SidebarInset className="flex min-h-svh flex-col bg-transparent">
+        <header className="sticky top-2 z-20 flex h-14 items-center gap-2 border-b border-border/60 bg-background px-4 backdrop-blur-sm rounded-2xl mx-4">
+          <SidebarTrigger className="text-muted-foreground" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/">Rutas</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Mapa en vivo</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          {/* <div className="ml-auto hidden items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1 text-xs text-muted-foreground shadow-sm sm:flex">
+            Actualizado hace 2 min
+            <span className="inline-flex size-2 rounded-full bg-emerald-400" />
+          </div> */}
+        </header>
 
-        {/* Botón de Exportar (Estructura para la Fase 2) */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <button className="w-full bg-black text-white font-medium py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors">
-            Exportar para My Maps (CSV)
-          </button>
-        </div>
-      </aside>
-
-      {/* Área del Mapa */}
-      <main className="flex-1 relative p-6">
-        <Card className="h-full p-0 overflow-hidden">
-          <Map key={mapCenter.join(',')} center={mapCenter} zoom={12} theme="light">
-            <MapControls />
-            <MapLabelTuner />
-            {ubicaciones.map((ubi) => (
-              <MapMarker
-                key={ubi.id}
-                longitude={ubi.longitud}
-                latitude={ubi.latitud}
-              >
-                <MarkerContent className="group">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="bg-white text-xs font-bold px-2 py-1 rounded shadow-md mb-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-gray-200">
-                      {ubi.nombre}
-                    </div>
-                    <div >
-                      <MapPin className="h-5 w-5 text-amber-100" fill='orange' focusable  />
-                    </div>
+        <main className="flex flex-1 flex-col gap-2 p-2 sm:p-4">
+          <div className="flex flex-1 flex-col">
+            <Card className="relative h-full min-h-105 overflow-hidden p-0 shadow-lg">
+              {cargando && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm transition-all duration-300">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    <p className="text-sm font-medium text-muted-foreground animate-pulse">Cargando mapa y ubicaciones...</p>
                   </div>
-                </MarkerContent>
-              </MapMarker>
-            ))}
-          </Map>
-        </Card>
-      </main>
-
-    </div>
+                </div>
+              )}
+              <Map
+                key={mapCenter.join(',')}
+                center={mapCenter}
+                zoom={12}
+                theme={(theme === 'system' ? resolvedTheme : theme) as 'light' | 'dark' | 'goal'}
+              >
+                <MapControls />
+                <MapLabelTuner />
+                {ubicaciones.map((ubi) => (
+                  <MapMarker
+                    key={ubi.id}
+                    longitude={ubi.longitud}
+                    latitude={ubi.latitud}
+                  >
+                    <MarkerContent className="group">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="mb-1 rounded bg-white px-2 py-1 text-xs font-bold opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                          {ubi.nombre}
+                        </div>
+                        <div>
+                          <MapPin
+                            className="h-5 w-5 text-sidebar-primary"
+                              fill='red'
+                            focusable
+                          />
+                        </div>
+                      </div>
+                    </MarkerContent>
+                  </MapMarker>
+                ))}
+              </Map>
+            </Card>
+          </div>
+        </main>
+      </SidebarInset>
+    </>
   );
 }

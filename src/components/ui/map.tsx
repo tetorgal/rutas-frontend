@@ -23,14 +23,16 @@ import { cn } from "@/lib/utils";
 const defaultStyles = {
   dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
   light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  goal: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
 };
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "goal";
 
 // Check document class for theme (works with next-themes, etc.)
 function getDocumentTheme(): Theme | null {
   if (typeof document === "undefined") return null;
   if (document.documentElement.classList.contains("dark")) return "dark";
+  if (document.documentElement.classList.contains("goal")) return "goal";
   if (document.documentElement.classList.contains("light")) return "light";
   return null;
 }
@@ -43,7 +45,7 @@ function getSystemTheme(): Theme {
     : "light";
 }
 
-function useResolvedTheme(themeProp?: "light" | "dark"): Theme {
+function useResolvedTheme(themeProp?: Theme): Theme {
   const [detectedTheme, setDetectedTheme] = useState<Theme>(
     () => getDocumentTheme() ?? getSystemTheme(),
   );
@@ -126,6 +128,7 @@ type MapProps = {
   styles?: {
     light?: MapStyleOption;
     dark?: MapStyleOption;
+    goal?: MapStyleOption;
   };
   /** Map projection type. Use `{ type: "globe" }` for 3D globe view. */
   projection?: MapLibreGL.ProjectionSpecification;
@@ -198,6 +201,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     () => ({
       dark: styles?.dark ?? defaultStyles.dark,
       light: styles?.light ?? defaultStyles.light,
+      goal: styles?.goal ?? defaultStyles.goal,
     }),
     [styles],
   );
@@ -217,7 +221,11 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     if (!containerRef.current) return;
 
     const initialStyle =
-      resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
+      resolvedTheme === "dark"
+        ? mapStyles.dark
+        : resolvedTheme === "goal"
+        ? mapStyles.goal
+        : mapStyles.light;
     currentStyleRef.current = initialStyle;
 
     const map = new MapLibreGL.Map({
@@ -302,7 +310,11 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     if (!mapInstance || !resolvedTheme) return;
 
     const newStyle =
-      resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
+      resolvedTheme === "dark"
+        ? mapStyles.dark
+        : resolvedTheme === "goal"
+        ? mapStyles.goal
+        : mapStyles.light;
 
     if (currentStyleRef.current === newStyle) return;
 
