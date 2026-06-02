@@ -127,13 +127,12 @@ export default function SupervisorDashboard() {
                   >
                     <MarkerContent className="group">
                       <div className="flex flex-col items-center justify-center">
-                        <div className="mb-1 rounded bg-white px-2 py-1 text-xs font-bold opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                        <div className="mb-1 rounded bg-background text-foreground px-2 py-1 text-xs font-bold opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                           {ubi.nombre}
                         </div>
                         <div>
                           <MapPin
                             className="h-5 w-5 text-sidebar-primary"
-                              fill='red'
                             focusable
                           />
                         </div>

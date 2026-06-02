@@ -10,6 +10,84 @@ export interface Ubicacion {
   urlOriginal: string;
 }
 
+export interface Ruta {
+  id: string;
+  nombre: string;
+  colorHex: string;
+}
+
+export interface Vendedor {
+  lid: string;
+  nombreReal: string;
+  telefono?: string;
+  activo: boolean;
+  rutaActualId?: string;
+  rutaActual?: Ruta;
+  creadoEn: string;
+}
+
+export interface Solicitud {
+  lid: string;
+  nombreWa?: string;
+  fecha: string;
+  estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
+}
+
+export function createGenericApiHooks<T>(
+  endpoint: string,
+  queryKey: string,
+  keyField: keyof T = 'id' as keyof T,
+) {
+  return {
+    useGetAll: (params?: Record<string, string>) => {
+      return useQuery<T[]>({
+        queryKey: params ? [queryKey, params] : [queryKey],
+        queryFn: async () => {
+          const { data } = await axiosInstance.get<T[]>(endpoint, { params });
+          return data;
+        },
+      });
+    },
+    useCreate: () => {
+      const queryClient = useQueryClient();
+      return useMutation({
+        mutationFn: async (newItem: Partial<T>) => {
+          const { data } = await axiosInstance.post<T>(endpoint, newItem);
+          return data;
+        },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: [queryKey] });
+        },
+      });
+    },
+    useUpdate: () => {
+      const queryClient = useQueryClient();
+      return useMutation({
+        mutationFn: async (updatedItem: Partial<T>) => {
+          const key = (updatedItem as Record<string, unknown>)[keyField as string];
+          const { data } = await axiosInstance.put<T>(`${endpoint}/${key}`, updatedItem);
+          return data;
+        },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: [queryKey] });
+        },
+      });
+    },
+    useDelete: () => {
+      const queryClient = useQueryClient();
+      return useMutation({
+        mutationFn: async (key: string) => {
+          await axiosInstance.delete(`${endpoint}/${key}`);
+          return key;
+        },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: [queryKey] });
+        },
+      });
+    },
+  };
+}
+
 // Hook to fetch all locations
 export function useUbicaciones() {
   return useQuery<Ubicacion[]>({
@@ -21,32 +99,62 @@ export function useUbicaciones() {
   });
 }
 
-// Hook to create a location
-export function useCreateUbicacion() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (nuevaUbi: Omit<Ubicacion, 'id'>) => {
-      const { data } = await axiosInstance.post<Ubicacion>('/ubicaciones', nuevaUbi);
+// Hook to fetch all routes
+export function useRutas() {
+  return useQuery<Ruta[]>({
+    queryKey: ['rutas'],
+    queryFn: async () => {
+      const { data } = await axiosInstance.get<Ruta[]>('/rutas');
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ubicaciones'] });
-    },
   });
 }
 
-// Hook to delete a location
-export function useDeleteUbicacion() {
-  const queryClient = useQueryClient();
+// Specific CRUD API hook instances with custom keys
+export const vendedorApi = createGenericApiHooks<Vendedor>('/vendedores', 'vendedores', 'lid');
 
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await axiosInstance.delete(`/ubicaciones/${id}`);
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ubicaciones'] });
-    },
-  });
-}
+const baseSolicitudApi = createGenericApiHooks<Solicitud>('/solicitudes', 'solicitudes', 'lid');
+
+export const solicitudApi = {
+  ...baseSolicitudApi,
+  useAprobar: () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+      mutationFn: async ({
+        lid,
+        nombreReal,
+        telefono,
+        rutaActualId,
+      }: {
+        lid: string;
+        nombreReal?: string;
+        telefono?: string;
+        rutaActualId?: string;
+      }) => {
+        const { data } = await axiosInstance.post(`/solicitudes/${lid}/aprobar`, {
+          nombreReal,
+          telefono,
+          rutaActualId,
+        });
+        return data;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
+        queryClient.invalidateQueries({ queryKey: ['vendedores'] });
+      },
+    });
+  },
+  useRechazar: () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+      mutationFn: async (lid: string) => {
+        const { data } = await axiosInstance.post(`/solicitudes/${lid}/rechazar`);
+        return data;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
+        queryClient.invalidateQueries({ queryKey: ['vendedores'] });
+      },
+    });
+  },
+};

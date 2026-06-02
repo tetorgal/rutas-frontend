@@ -1,6 +1,7 @@
 'use client';
 
 import { useUbicaciones } from "@/hooks/useApi";
+import Link from "next/link";
 import {
   Sidebar,
   SidebarContent,
@@ -66,20 +67,23 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton isActive tooltip="Mapa en vivo">
-                  <MapPin />
-                  <span>Mapa en vivo</span>
+                <SidebarMenuButton isActive tooltip="Mapa en vivo" asChild>
+                  <Link href="/">
+                    <MapPin />
+                    <span>Mapa en vivo</span>
+                  </Link>
                 </SidebarMenuButton>
                 {/* Hide the badge in icon mode to prevent overlap */}
                 <SidebarMenuBadge className="group-data-[collapsible=icon]:hidden">
                   {ubicaciones.length}
                 </SidebarMenuBadge>
               </SidebarMenuItem>
-              {/* ... other menu items ... */}
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Vendedores">
-                  <Users />
-                  <span>Vendedores</span>
+                <SidebarMenuButton tooltip="Vendedores" asChild>
+                  <Link href="/vendedores">
+                    <Users />
+                    <span>Vendedores</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -88,10 +92,12 @@ export function AppSidebar() {
                   <span>Rutas</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-                     <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Solicitudes">
-                  <UserPlus />
-                  <span>Solicitudes</span>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Solicitudes" asChild>
+                  <Link href="/solicitudes">
+                    <UserPlus />
+                    <span>Solicitudes</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

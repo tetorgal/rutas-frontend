@@ -42,7 +42,7 @@ export function ThemeToggle() {
     } else {
       setTheme(resolvedTheme === "dark" ? "goal" : "dark");
     }
-  };
+  }
 
   let icon = <Sun className="size-4 shrink-0 text-amber-500" />;
   let label = "Tema claro";
@@ -51,10 +51,10 @@ export function ThemeToggle() {
   if (currentTheme === "dark") {
     icon = <Moon className="size-4 shrink-0 text-indigo-300" />;
     label = "Tema oscuro";
-    tooltipText = "Cambiar a tema logro";
+    tooltipText = "Cambiar a tema combinado";
   } else if (currentTheme === "goal") {
     icon = <Trophy className="size-4 shrink-0 text-amber-400 animate-pulse" />;
-    label = "Tema logro";
+    label = "Tema combinado";
     tooltipText = "Cambiar a tema claro";
   }
 
