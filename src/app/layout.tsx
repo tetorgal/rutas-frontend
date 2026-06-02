@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/themeProvider";
+import { Toaster } from "sonner";
 
 const dmSansHeading = DM_Sans({ subsets: ['latin'], variable: '--font-heading' });
 const raleway = Raleway({ subsets: ['latin'], variable: '--font-sans' });
@@ -32,6 +33,7 @@ export default function RootLayout({
           enableSystem
           themes={["light", "dark", "goal"]}
           disableTransitionOnChange>
+          <Toaster richColors position="top-right" />
 
 <Providers>
 

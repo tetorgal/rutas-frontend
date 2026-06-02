@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
-import { vendedorApi, Vendedor, useRutas } from '@/hooks/useApi';
+import { rutaApi, Ruta } from '@/hooks/useApi';
 import { ReusableTable, Column } from '@/components/shared/ReusableTable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { SidebarInset, SidebarRail, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/built/Sidebar';
-import { UserPlus, Users, CheckCircle, XCircle, Route } from 'lucide-react';
+import { PlusCircle, Route } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +41,6 @@ function FieldGroup({ children, className }: { children: React.ReactNode; classN
   return <div className={`space-y-1.5 ${className || ''}`}>{children}</div>;
 }
 
-// Fixed required prop warning in typescript
 function FieldLabel({ children, htmlFor, required }: { children: React.ReactNode; htmlFor?: string; required?: boolean }) {
   return (
     <label htmlFor={htmlFor} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -51,42 +50,32 @@ function FieldLabel({ children, htmlFor, required }: { children: React.ReactNode
   );
 }
 
-export default function VendedoresPage() {
-  const { data: vendedores = [], isLoading } = vendedorApi.useGetAll();
-  const { data: rutas = [] } = useRutas();
+export default function RutasPage() {
+  const { data: rutas = [], isLoading } = rutaApi.useGetAll();
 
-  const createMutation = vendedorApi.useCreate();
-  const updateMutation = vendedorApi.useUpdate();
-  const deleteMutation = vendedorApi.useDelete();
+  const createMutation = rutaApi.useCreate();
+  const updateMutation = rutaApi.useUpdate();
+  const deleteMutation = rutaApi.useDelete();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [editingVendedor, setEditingVendedor] = useState<Vendedor | undefined>(undefined);
+  const [editingRuta, setEditingRuta] = useState<Ruta | undefined>(undefined);
 
   // AlertDialog State
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [lidToDelete, setLidToDelete] = useState<string | null>(null);
+  const [idToDelete, setIdToDelete] = useState<string | null>(null);
 
-  // Map routes for the select dropdown
-  const routeOptions = rutas.map((r) => ({
-    label: r.nombre,
-    value: r.id,
-  }));
-
-  // Define TanStack Form
+  // Define TanStack Form for Routes
   const form = useForm({
     defaultValues: {
-      lid: '',
-      nombreReal: '',
-      telefono: '',
-      rutaActualId: '',
-      activo: true,
+      nombre: '',
+      colorHex: '#3B82F6',
     },
     onSubmit: async ({ value }) => {
       try {
-        if (editingVendedor) {
+        if (editingRuta) {
           const updateData = {
             ...value,
-            lid: editingVendedor.lid, // Force key consistency
+            id: editingRuta.id,
           };
           await updateMutation.mutateAsync(updateData);
         } else {
@@ -99,78 +88,40 @@ export default function VendedoresPage() {
     },
   });
 
-  // Sync editing item state to the form fields
+  // Sync editing item state to form fields
   useEffect(() => {
     if (isOpen) {
-      if (editingVendedor) {
-        form.setFieldValue('lid', editingVendedor.lid);
-        form.setFieldValue('nombreReal', editingVendedor.nombreReal);
-        form.setFieldValue('telefono', editingVendedor.telefono || '');
-        form.setFieldValue('rutaActualId', editingVendedor.rutaActualId || '');
-        form.setFieldValue('activo', editingVendedor.activo);
+      if (editingRuta) {
+        form.setFieldValue('nombre', editingRuta.nombre);
+        form.setFieldValue('colorHex', editingRuta.colorHex);
       } else {
         form.reset();
       }
     }
-  }, [editingVendedor, isOpen, form]);
+  }, [editingRuta, isOpen, form]);
 
-  const columns: Column<Vendedor>[] = [
+  const columns: Column<Ruta>[] = [
     {
-      key: 'lid',
-      header: 'LID / WhatsApp',
-    },
-    {
-      key: 'nombreReal',
-      header: 'Nombre',
-    },
-    {
-      key: 'telefono',
-      header: 'Teléfono',
-      render: (item) => <span>{item.telefono || 'Sin registrar'}</span>,
-    },
-    {
-      key: 'rutaActualId',
-      header: 'Ruta Asignada',
-      render: (item) => {
-        if (!item.rutaActual) {
-          return <span className="text-muted-foreground text-xs italic">Sin ruta</span>;
-        }
-        return (
-          <span
-            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border"
-            style={{
-              borderColor: `${item.rutaActual.colorHex}40`,
-              backgroundColor: `${item.rutaActual.colorHex}15`,
-              color: item.rutaActual.colorHex,
-            }}
-          >
-            <Route className="size-3" />
-            {item.rutaActual.nombre}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'activo',
-      header: 'Estado',
+      key: 'nombre',
+      header: 'Nombre de la Ruta',
       render: (item) => (
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-            item.activo
-              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-              : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
-          }`}
-        >
-          {item.activo ? (
-            <>
-              <CheckCircle className="size-3.5" /> Activo
-            </>
-          ) : (
-            <>
-              <XCircle className="size-3.5" /> Inactivo
-            </>
-          )}
+        <span className="font-semibold text-foreground flex items-center gap-2">
+          <Route className="size-4 text-muted-foreground" />
+          {item.nombre}
         </span>
+      ),
+    },
+    {
+      key: 'colorHex',
+      header: 'Color de Identificación',
+      render: (item) => (
+        <div className="flex items-center gap-2">
+          <div
+            className="size-5 rounded-full border border-black/10 dark:border-white/10 shadow-sm"
+            style={{ backgroundColor: item.colorHex }}
+          />
+          <span className="font-mono text-xs uppercase text-muted-foreground">{item.colorHex}</span>
+        </div>
       ),
     },
     {
@@ -180,28 +131,28 @@ export default function VendedoresPage() {
   ];
 
   const handleCreateClick = () => {
-    setEditingVendedor(undefined);
+    setEditingRuta(undefined);
     setIsOpen(true);
   };
 
-  const handleEditClick = (vendedor: Vendedor) => {
-    setEditingVendedor(vendedor);
+  const handleEditClick = (ruta: Ruta) => {
+    setEditingRuta(ruta);
     setIsOpen(true);
   };
 
-  const handleDeleteClick = (lid: string) => {
-    setLidToDelete(lid);
+  const handleDeleteClick = (id: string) => {
+    setIdToDelete(id);
     setDeleteConfirmOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (lidToDelete) {
+    if (idToDelete) {
       try {
-        await deleteMutation.mutateAsync(lidToDelete);
+        await deleteMutation.mutateAsync(idToDelete);
       } catch {
         // Handled globally
       } finally {
-        setLidToDelete(null);
+        setIdToDelete(null);
       }
     }
   };
@@ -220,7 +171,7 @@ export default function VendedoresPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>Vendedores</BreadcrumbPage>
+                <BreadcrumbPage>Rutas</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -230,26 +181,26 @@ export default function VendedoresPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex size-11 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
-                <Users className="size-5" />
+                <Route className="size-5" />
               </div>
               <div>
                 <h1 className="text-xl font-bold tracking-tight text-foreground">
-                  Gestión de Vendedores
+                  Gestión de Rutas
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Administra los vendedores autorizados y sus rutas asignadas.
+                  Administra las rutas disponibles para asignar a tus vendedores y clasificar ubicaciones.
                 </p>
               </div>
             </div>
             <Button onClick={handleCreateClick} className="rounded-xl gap-2 h-11 self-start sm:self-auto">
-              <UserPlus className="size-4" />
-              Nuevo Vendedor
+              <PlusCircle className="size-4" />
+              Nueva Ruta
             </Button>
           </div>
 
           <ReusableTable
             columns={columns}
-            data={vendedores}
+            data={rutas}
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
             isLoading={isLoading}
@@ -260,12 +211,12 @@ export default function VendedoresPage() {
           <SheetContent side="right" className="sm:max-w-md bg-background border-l border-border overflow-y-auto p-4">
             <SheetHeader className="pb-4 border-b border-border/60">
               <SheetTitle>
-                {editingVendedor ? 'Editar Vendedor' : 'Nuevo Vendedor'}
+                {editingRuta ? 'Editar Ruta' : 'Nueva Ruta'}
               </SheetTitle>
               <SheetDescription>
-                {editingVendedor
-                  ? 'Modifica los campos del vendedor seleccionado.'
-                  : 'Rellena el formulario para dar de alta un nuevo vendedor.'}
+                {editingRuta
+                  ? 'Modifica los campos de la ruta seleccionada.'
+                  : 'Rellena el formulario para dar de alta una nueva ruta de distribución.'}
               </SheetDescription>
             </SheetHeader>
             <div className="py-6">
@@ -279,39 +230,7 @@ export default function VendedoresPage() {
               >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <form.Field
-                    name="lid"
-                    validators={{
-                      onChange: ({ value }) => {
-                        if (editingVendedor) return undefined;
-                        const res = z.string().min(1, 'El LID/WhatsApp es requerido').safeParse(value);
-                        return res.success ? undefined : res.error.issues[0]?.message;
-                      },
-                    }}
-                  >
-                    {(field) => (
-                      <FieldGroup className="sm:col-span-2">
-                        <FieldLabel htmlFor={field.name} required={!editingVendedor}>
-                          ID de WhatsApp / LID
-                        </FieldLabel>
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="Ej. 5216183951156"
-                          disabled={!!editingVendedor}
-                          className="rounded-xl px-4 py-3 bg-card"
-                        />
-                        {field.state.meta.errors ? (
-                          <p className="text-xs text-rose-500 font-medium">{field.state.meta.errors.join(', ')}</p>
-                        ) : null}
-                      </FieldGroup>
-                    )}
-                  </form.Field>
-
-                  <form.Field
-                    name="nombreReal"
+                    name="nombre"
                     validators={{
                       onChange: ({ value }) => {
                         const res = z.string().min(1, 'El nombre es requerido').safeParse(value);
@@ -322,7 +241,7 @@ export default function VendedoresPage() {
                     {(field) => (
                       <FieldGroup className="sm:col-span-2">
                         <FieldLabel htmlFor={field.name} required>
-                          Nombre completo
+                          Nombre de la Ruta
                         </FieldLabel>
                         <Input
                           id={field.name}
@@ -330,7 +249,7 @@ export default function VendedoresPage() {
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="Ej. Juan Pérez"
+                          placeholder="Ej. Ruta Poniente o Ruta 12"
                           className="rounded-xl px-4 py-3 bg-card"
                         />
                         {field.state.meta.errors ? (
@@ -340,62 +259,46 @@ export default function VendedoresPage() {
                     )}
                   </form.Field>
 
-                  <form.Field name="telefono">
+                  <form.Field
+                    name="colorHex"
+                    validators={{
+                      onChange: ({ value }) => {
+                        const res = z
+                          .string()
+                          .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Formato hexadecimal inválido (ej. #3B82F6)')
+                          .safeParse(value);
+                        return res.success ? undefined : res.error.issues[0]?.message;
+                      },
+                    }}
+                  >
                     {(field) => (
-                      <FieldGroup>
-                        <FieldLabel htmlFor={field.name}>
-                          Teléfono de contacto
+                      <FieldGroup className="sm:col-span-2">
+                        <FieldLabel htmlFor={field.name} required>
+                          Color hexadecimal
                         </FieldLabel>
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="Ej. 6181234567"
-                          className="rounded-xl px-4 py-3 bg-card"
-                        />
-                      </FieldGroup>
-                    )}
-                  </form.Field>
-
-                  <form.Field name="rutaActualId">
-                    {(field) => (
-                      <FieldGroup>
-                        <FieldLabel htmlFor={field.name}>
-                          Ruta Asignada
-                        </FieldLabel>
-                        <select
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value || ''}
-                          onChange={(e) => field.handleChange(e.target.value || '')}
-                          className="flex w-full rounded-xl border border-input bg-card px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <option value="">Selecciona una ruta</option>
-                          {routeOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                      </FieldGroup>
-                    )}
-                  </form.Field>
-
-                  <form.Field name="activo">
-                    {(field) => (
-                      <label className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3 cursor-pointer hover:bg-muted/40 transition">
-                        <input
-                          type="checkbox"
-                          checked={!!field.state.value}
-                          onChange={(e) => field.handleChange(e.target.checked)}
-                          className="size-4 rounded border-border text-primary focus:ring-primary"
-                        />
-                        <div className="text-sm font-medium text-foreground">
-                          Vendedor activo (Autorizado para reportar ubicaciones)
+                        <div className="flex items-center gap-3">
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            placeholder="Ej. #3B82F6"
+                            className="rounded-xl px-4 py-3 bg-card flex-1 font-mono uppercase"
+                          />
+                          <div className="relative size-11 shrink-0 rounded-xl border border-input overflow-hidden cursor-pointer">
+                            <input
+                              type="color"
+                              value={field.state.value}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              className="absolute inset-0 size-full scale-150 cursor-pointer p-0 border-0"
+                            />
+                          </div>
                         </div>
-                      </label>
+                        {field.state.meta.errors ? (
+                          <p className="text-xs text-rose-500 font-medium">{field.state.meta.errors.join(', ')}</p>
+                        ) : null}
+                      </FieldGroup>
                     )}
                   </form.Field>
                 </div>
@@ -421,10 +324,10 @@ export default function VendedoresPage() {
                             <span className="size-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
                             Guardando...
                           </div>
-                        ) : editingVendedor ? (
+                        ) : editingRuta ? (
                           'Guardar Cambios'
                         ) : (
-                          'Crear Vendedor'
+                          'Crear Ruta'
                         )}
                       </Button>
                     )}
@@ -439,15 +342,15 @@ export default function VendedoresPage() {
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
+            <AlertDialogTitle>¿Confirmar eliminación de la ruta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción es irreversible. Se eliminará el vendedor permanentemente del sistema.
+              Esta acción eliminará la ruta permanentemente. Los vendedores y puntos asociados quedarán sin ruta asignada.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete}>
-              Eliminar Vendedor
+              Eliminar Ruta
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

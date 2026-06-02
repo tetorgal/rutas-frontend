@@ -1,14 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { axiosInstance } from '@/lib/api';
-
-export interface Ubicacion {
-  id: string;
-  nombre: string;
-  latitud: number;
-  longitud: number;
-  nombreVendedor: string;
-  urlOriginal: string;
-}
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { axiosInstance } from "@/lib/api";
 
 export interface Ruta {
   id: string;
@@ -19,10 +10,32 @@ export interface Ruta {
 export interface Vendedor {
   lid: string;
   nombreReal: string;
-  telefono?: string;
+  telefono?: string | null;
   activo: boolean;
-  rutaActualId?: string;
-  rutaActual?: Ruta;
+  rutaActualId?: string | null;
+  rutaActual?: Ruta | null;
+  creadoEn: string;
+}
+
+export interface Ubicacion {
+  id: string;
+  nombre: string;
+  latitud: number;
+  longitud: number;
+  SAP: string;
+  urlOriginal: string;
+  vendedorLid?: string | null;
+  vendedor?: Vendedor;
+  rutaId?: string | null;
+  ruta?: Ruta | null;
+  diasVisita?: (
+    | "LUNES"
+    | "MARTES"
+    | "MIERCOLES"
+    | "JUEVES"
+    | "VIERNES"
+    | "SABADO"
+  )[];
   creadoEn: string;
 }
 
@@ -30,13 +43,13 @@ export interface Solicitud {
   lid: string;
   nombreWa?: string;
   fecha: string;
-  estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
+  estado: "PENDIENTE" | "APROBADO" | "RECHAZADO";
 }
 
 export function createGenericApiHooks<T>(
   endpoint: string,
   queryKey: string,
-  keyField: keyof T = 'id' as keyof T,
+  keyField: keyof T = "id" as keyof T,
 ) {
   return {
     useGetAll: (params?: Record<string, string>) => {
@@ -64,8 +77,13 @@ export function createGenericApiHooks<T>(
       const queryClient = useQueryClient();
       return useMutation({
         mutationFn: async (updatedItem: Partial<T>) => {
-          const key = (updatedItem as Record<string, unknown>)[keyField as string];
-          const { data } = await axiosInstance.put<T>(`${endpoint}/${key}`, updatedItem);
+          const key = (updatedItem as Record<string, unknown>)[
+            keyField as string
+          ];
+          const { data } = await axiosInstance.put<T>(
+            `${endpoint}/${key}`,
+            updatedItem,
+          );
           return data;
         },
         onSuccess: () => {
@@ -88,32 +106,45 @@ export function createGenericApiHooks<T>(
   };
 }
 
-// Hook to fetch all locations
+// Hook to fetch all locations (remains fully backward compatible)
 export function useUbicaciones() {
   return useQuery<Ubicacion[]>({
-    queryKey: ['ubicaciones'],
+    queryKey: ["ubicaciones"],
     queryFn: async () => {
-      const { data } = await axiosInstance.get<Ubicacion[]>('/ubicaciones');
+      const { data } = await axiosInstance.get<Ubicacion[]>("/ubicaciones");
       return data;
     },
   });
 }
 
-// Hook to fetch all routes
+// Hook to fetch all routes (remains fully backward compatible)
 export function useRutas() {
   return useQuery<Ruta[]>({
-    queryKey: ['rutas'],
+    queryKey: ["rutas"],
     queryFn: async () => {
-      const { data } = await axiosInstance.get<Ruta[]>('/rutas');
+      const { data } = await axiosInstance.get<Ruta[]>("/rutas");
       return data;
     },
   });
 }
 
 // Specific CRUD API hook instances with custom keys
-export const vendedorApi = createGenericApiHooks<Vendedor>('/vendedores', 'vendedores', 'lid');
+export const vendedorApi = createGenericApiHooks<Vendedor>(
+  "/vendedores",
+  "vendedores",
+  "lid",
+);
+export const rutaApi = createGenericApiHooks<Ruta>("/rutas", "rutas");
+export const ubicacionApi = createGenericApiHooks<Ubicacion>(
+  "/ubicaciones",
+  "ubicaciones",
+);
 
-const baseSolicitudApi = createGenericApiHooks<Solicitud>('/solicitudes', 'solicitudes', 'lid');
+const baseSolicitudApi = createGenericApiHooks<Solicitud>(
+  "/solicitudes",
+  "solicitudes",
+  "lid",
+);
 
 export const solicitudApi = {
   ...baseSolicitudApi,
@@ -131,16 +162,19 @@ export const solicitudApi = {
         telefono?: string;
         rutaActualId?: string;
       }) => {
-        const { data } = await axiosInstance.post(`/solicitudes/${lid}/aprobar`, {
-          nombreReal,
-          telefono,
-          rutaActualId,
-        });
+        const { data } = await axiosInstance.post(
+          `/solicitudes/${lid}/aprobar`,
+          {
+            nombreReal,
+            telefono,
+            rutaActualId,
+          },
+        );
         return data;
       },
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
-        queryClient.invalidateQueries({ queryKey: ['vendedores'] });
+        queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
+        queryClient.invalidateQueries({ queryKey: ["vendedores"] });
       },
     });
   },
@@ -148,12 +182,14 @@ export const solicitudApi = {
     const queryClient = useQueryClient();
     return useMutation({
       mutationFn: async (lid: string) => {
-        const { data } = await axiosInstance.post(`/solicitudes/${lid}/rechazar`);
+        const { data } = await axiosInstance.post(
+          `/solicitudes/${lid}/rechazar`,
+        );
         return data;
       },
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
-        queryClient.invalidateQueries({ queryKey: ['vendedores'] });
+        queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
+        queryClient.invalidateQueries({ queryKey: ["vendedores"] });
       },
     });
   },

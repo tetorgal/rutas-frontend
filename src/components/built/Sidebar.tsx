@@ -87,9 +87,19 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Rutas">
-                  <Route />
-                  <span>Rutas</span>
+                <SidebarMenuButton tooltip="Rutas" asChild>
+                  <Link href="/rutas">
+                    <Route />
+                    <span>Rutas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Ubicaciones" asChild>
+                  <Link href="/ubicaciones">
+                    <MapPin />
+                    <span>Ubicaciones</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -141,7 +151,7 @@ export function AppSidebar() {
                       <div className="flex items-center justify-start gap-1">
                       <User className="size-3.5 text-sidebar-primary"></User>
                       <span className="text-xs text-sidebar-foreground/60">
-                        {ubicacion.nombreVendedor}
+                        {ubicacion.vendedor?.nombreReal || ubicacion.vendedorLid || "Supervisor"}
                       </span>
 </div>
                     </a>

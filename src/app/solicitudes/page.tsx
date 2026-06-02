@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useForm } from '@tanstack/react-form';
+import { z } from 'zod';
 import { solicitudApi, useRutas, Solicitud } from '@/hooks/useApi';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -32,12 +35,29 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { ReusableTable, Column } from '@/components/shared/ReusableTable';
-import { ReusableForm, FormFieldConfig } from '@/components/shared/ReusableForm';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
-interface ApprovalFormData {
-  nombreReal: string;
-  telefono: string;
-  rutaActualId?: string;
+// Lightweight form layout helpers
+function FieldGroup({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={`space-y-1.5 ${className || ''}`}>{children}</div>;
+}
+
+function FieldLabel({ children, htmlFor, required }: { children: React.ReactNode; htmlFor?: string; required?: boolean }) {
+  return (
+    <label htmlFor={htmlFor} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      {children}
+      {required && <span className="text-destructive ml-0.5">*</span>}
+    </label>
+  );
 }
 
 export default function SolicitudesWaitlistPage() {
@@ -51,51 +71,94 @@ export default function SolicitudesWaitlistPage() {
   const [isApproveOpen, setIsApproveOpen] = useState(false);
   const [selectedSolicitud, setSelectedSolicitud] = useState<Solicitud | null>(null);
 
+  // AlertDialog State
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string;
+    description: string;
+    actionText: string;
+    action: () => Promise<void>;
+  } | null>(null);
+
   const routeOptions = rutas.map((r) => ({
     label: r.nombre,
     value: r.id,
   }));
+
+  // Define TanStack Form for Approval
+  const form = useForm({
+    defaultValues: {
+      nombreReal: '',
+      telefono: '',
+      rutaActualId: '',
+    },
+    onSubmit: async ({ value }) => {
+      if (!selectedSolicitud) return;
+      try {
+        await aprobarMutation.mutateAsync({
+          lid: selectedSolicitud.lid,
+          nombreReal: value.nombreReal,
+          telefono: value.telefono,
+          rutaActualId: value.rutaActualId || undefined,
+        });
+        setIsApproveOpen(false);
+        setSelectedSolicitud(null);
+      } catch {
+        // Handled globally
+      }
+    },
+  });
+
+  // Sync selected solicitud details to form inputs
+  useEffect(() => {
+    if (isApproveOpen) {
+      if (selectedSolicitud) {
+        form.setFieldValue('nombreReal', selectedSolicitud.nombreWa || '');
+        form.setFieldValue('telefono', selectedSolicitud.lid || '');
+        form.setFieldValue('rutaActualId', '');
+      } else {
+        form.reset();
+      }
+    }
+  }, [selectedSolicitud, isApproveOpen, form]);
 
   const handleApproveClick = (solicitud: Solicitud) => {
     setSelectedSolicitud(solicitud);
     setIsApproveOpen(true);
   };
 
-  const handleConfirmApproval = async (formData: ApprovalFormData) => {
-    if (!selectedSolicitud) return;
-    try {
-      await aprobarMutation.mutateAsync({
-        lid: selectedSolicitud.lid,
-        nombreReal: formData.nombreReal,
-        telefono: formData.telefono,
-        rutaActualId: formData.rutaActualId || undefined,
-      });
-      setIsApproveOpen(false);
-      setSelectedSolicitud(null);
-    } catch (err) {
-      const error = err as Error;
-      alert(error.message || 'Error al aprobar la solicitud');
-    }
-  };
-
-  const handleRejectClick = async (lid: string) => {
-    if (confirm('¿Estás seguro de que deseas rechazar esta solicitud? El vendedor será marcado como inactivo.')) {
-      try {
+  const handleRejectClick = (lid: string) => {
+    setConfirmConfig({
+      title: '¿Rechazar solicitud?',
+      description: 'Esta acción marcará la solicitud como rechazada y desactivará al vendedor si existe en el sistema.',
+      actionText: 'Rechazar Solicitud',
+      action: async () => {
         await rechazarMutation.mutateAsync(lid);
-      } catch (err) {
-        const error = err as Error;
-        alert(error.message || 'Error al rechazar la solicitud');
-      }
-    }
+      },
+    });
+    setConfirmOpen(true);
   };
 
-  const handleDeleteClick = async (lid: string) => {
-    if (confirm('¿Estás seguro de que deseas eliminar esta solicitud de la lista de espera?')) {
-      try {
+  const handleDeleteClick = (lid: string) => {
+    setConfirmConfig({
+      title: '¿Eliminar de la lista de espera?',
+      description: 'Esta acción removerá permanentemente el registro de la sala de espera.',
+      actionText: 'Eliminar Registro',
+      action: async () => {
         await eliminarMutation.mutateAsync(lid);
-      } catch (err) {
-        const error = err as Error;
-        alert(error.message || 'Error al eliminar la solicitud');
+      },
+    });
+    setConfirmOpen(true);
+  };
+
+  const confirmAction = async () => {
+    if (confirmConfig) {
+      try {
+        await confirmConfig.action();
+      } catch {
+        // Handled globally
+      } finally {
+        setConfirmConfig(null);
       }
     }
   };
@@ -161,11 +224,11 @@ export default function SolicitudesWaitlistPage() {
       render: (item) => (
         <div className="flex items-center gap-2">
           {item.estado === 'PENDIENTE' && (
-            <div className='gap-2 flex'>
+            <>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 cursor-pointer rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                className="h-8 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
                 onClick={() => handleApproveClick(item)}
               >
                 <UserCheck className="size-4 mr-1" />
@@ -174,18 +237,18 @@ export default function SolicitudesWaitlistPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-lg cursor-pointer bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 hover:text-rose-700 dark:text-rose-400 border-rose-500/20"
+                className="h-8 rounded-lg bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 hover:text-rose-700 dark:text-rose-400 border-rose-500/20"
                 onClick={() => handleRejectClick(item.lid)}
               >
                 <UserX className="size-4 mr-1" />
                 Rechazar
               </Button>
-            </div>
+            </>
           )}
           <Button
             variant="outline"
             size="icon"
-            className="size-8 rounded-lg cursor-pointer border-destructive/20 hover:bg-destructive/10"
+            className="size-8 rounded-lg border-destructive/20 hover:bg-destructive/10"
             onClick={() => handleDeleteClick(item.lid)}
             title="Eliminar registro"
           >
@@ -195,36 +258,6 @@ export default function SolicitudesWaitlistPage() {
       ),
     },
   ];
-
-  // Config for the approval form
-  const approvalFormFields: FormFieldConfig<ApprovalFormData>[] = [
-    {
-      name: 'nombreReal',
-      label: 'Nombre Completo del Vendedor',
-      type: 'text',
-      placeholder: 'Ej. Juan Pérez',
-      required: true,
-    },
-    {
-      name: 'telefono',
-      label: 'Número de Teléfono',
-      type: 'text',
-      placeholder: 'Ej. 6181234567',
-      required: true,
-    },
-    {
-      name: 'rutaActualId',
-      label: 'Ruta Asignada (Opcional)',
-      type: 'select',
-      placeholder: 'Selecciona una ruta',
-      options: routeOptions,
-    },
-  ];
-
-  const approvalInitialData: Partial<ApprovalFormData> = {
-    nombreReal: selectedSolicitud?.nombreWa || '',
-    telefono: selectedSolicitud?.lid || '',
-  };
 
   return (
     <>
@@ -276,7 +309,7 @@ export default function SolicitudesWaitlistPage() {
         </main>
 
         <Sheet open={isApproveOpen} onOpenChange={setIsApproveOpen}>
-          <SheetContent side="right" className="sm:max-w-md bg-background border-l border-border">
+          <SheetContent side="right" className="sm:max-w-md bg-background border-l border-border overflow-y-auto p-4">
             <SheetHeader className="pb-4 border-b border-border/60">
               <SheetTitle className="flex items-center gap-2">
                 <Sparkles className="size-5 text-yellow-500" />
@@ -300,18 +333,149 @@ export default function SolicitudesWaitlistPage() {
                   </div>
                 </div>
               )}
-              <ReusableForm
-                fields={approvalFormFields}
-                initialData={approvalInitialData}
-                onSubmit={handleConfirmApproval}
-                onCancel={() => setIsApproveOpen(false)}
-                submitLabel="Confirmar y Autorizar"
-                isSubmitting={aprobarMutation.isPending}
-              />
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  form.handleSubmit();
+                }}
+                className="space-y-5"
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <form.Field
+                    name="nombreReal"
+                    validators={{
+                      onChange: ({ value }) => {
+                        const res = z.string().min(1, 'El nombre es requerido').safeParse(value);
+                        return res.success ? undefined : res.error.issues[0]?.message;
+                      },
+                    }}
+                  >
+                    {(field) => (
+                      <FieldGroup className="sm:col-span-2">
+                        <FieldLabel htmlFor={field.name} required>
+                          Nombre Completo del Vendedor
+                        </FieldLabel>
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder="Ej. Juan Pérez"
+                          className="rounded-xl px-4 py-3 bg-card"
+                        />
+                        {field.state.meta.errors ? (
+                          <p className="text-xs text-rose-500 font-medium">{field.state.meta.errors.join(', ')}</p>
+                        ) : null}
+                      </FieldGroup>
+                    )}
+                  </form.Field>
+
+                  <form.Field
+                    name="telefono"
+                    validators={{
+                      onChange: ({ value }) => {
+                        const res = z.string().min(1, 'El teléfono es requerido').safeParse(value);
+                        return res.success ? undefined : res.error.issues[0]?.message;
+                      },
+                    }}
+                  >
+                    {(field) => (
+                      <FieldGroup className="sm:col-span-2">
+                        <FieldLabel htmlFor={field.name} required>
+                          Número de Teléfono
+                        </FieldLabel>
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder="Ej. 6181234567"
+                          className="rounded-xl px-4 py-3 bg-card"
+                        />
+                        {field.state.meta.errors ? (
+                          <p className="text-xs text-rose-500 font-medium">{field.state.meta.errors.join(', ')}</p>
+                        ) : null}
+                      </FieldGroup>
+                    )}
+                  </form.Field>
+
+                  <form.Field name="rutaActualId">
+                    {(field) => (
+                      <FieldGroup className="sm:col-span-2">
+                        <FieldLabel htmlFor={field.name}>
+                          Ruta Asignada (Opcional)
+                        </FieldLabel>
+                        <select
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value || ''}
+                          onChange={(e) => field.handleChange(e.target.value || '')}
+                          className="flex w-full rounded-xl border border-input bg-card px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="">Selecciona una ruta</option>
+                          {routeOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </FieldGroup>
+                    )}
+                  </form.Field>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/60">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsApproveOpen(false)}
+                    className="rounded-xl px-5"
+                  >
+                    Cancelar
+                  </Button>
+                  <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                    {([canSubmit, isSubmitting]) => (
+                      <Button
+                        type="submit"
+                        disabled={!canSubmit || isSubmitting}
+                        className="rounded-xl px-6"
+                      >
+                        {isSubmitting || aprobarMutation.isPending ? (
+                          <div className="flex items-center gap-2">
+                            <span className="size-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                            Guardando...
+                          </div>
+                        ) : (
+                          'Confirmar y Autorizar'
+                        )}
+                      </Button>
+                    )}
+                  </form.Subscribe>
+                </div>
+              </form>
             </div>
           </SheetContent>
         </Sheet>
       </SidebarInset>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmConfig?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmConfig?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAction}>
+              {confirmConfig?.actionText || 'Confirmar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

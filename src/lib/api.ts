@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { toast } from 'sonner';
 
 export const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5200',
@@ -8,9 +9,20 @@ export const axiosInstance = axios.create({
   },
 });
 
-// Response interceptor for unified error handling
+// Response interceptor for unified error handling and toast notifications
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = response.config.method?.toUpperCase();
+    if (method && ['POST', 'PUT', 'DELETE'].includes(method)) {
+      let action = 'procesada';
+      if (method === 'POST') action = 'creada / registrada';
+      if (method === 'PUT') action = 'actualizada';
+      if (method === 'DELETE') action = 'eliminada';
+      
+      toast.success(`Información ${action} correctamente.`);
+    }
+    return response;
+  },
   (error: AxiosError) => {
     let errorMessage = 'Ha ocurrido un error inesperado';
     
@@ -50,6 +62,8 @@ axiosInstance.interceptors.response.use(
       message: errorMessage,
       originalError: error,
     });
+
+    toast.error(errorMessage);
 
     return Promise.reject(new Error(errorMessage));
   }
