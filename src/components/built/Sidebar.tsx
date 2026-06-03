@@ -2,6 +2,7 @@
 
 import { useUbicaciones } from "@/hooks/useApi";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +26,7 @@ import {
   MapPin,
   Route,
   Settings,
+  Wrench,
   User,
   UserPlus,
   Users,
@@ -34,6 +36,7 @@ import {
 
 export function AppSidebar() {
   const { data: ubicaciones = [], isLoading: cargando } = useUbicaciones();
+  const pathname = usePathname();
 
   const recentItems = ubicaciones.slice(0, 6);
 
@@ -67,7 +70,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton isActive tooltip="Mapa en vivo" asChild>
+                <SidebarMenuButton isActive={pathname === "/"} tooltip="Mapa en vivo" asChild>
                   <Link href="/">
                     <MapPin />
                     <span>Mapa en vivo</span>
@@ -79,7 +82,7 @@ export function AppSidebar() {
                 </SidebarMenuBadge>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Vendedores" asChild>
+                <SidebarMenuButton isActive={pathname.startsWith("/vendedores")} tooltip="Vendedores" asChild>
                   <Link href="/vendedores">
                     <Users />
                     <span>Vendedores</span>
@@ -87,7 +90,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Rutas" asChild>
+                <SidebarMenuButton isActive={pathname.startsWith("/rutas")} tooltip="Rutas" asChild>
                   <Link href="/rutas">
                     <Route />
                     <span>Rutas</span>
@@ -95,7 +98,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Ubicaciones" asChild>
+                <SidebarMenuButton isActive={pathname.startsWith("/ubicaciones")} tooltip="Ubicaciones" asChild>
                   <Link href="/ubicaciones">
                     <MapPin />
                     <span>Ubicaciones</span>
@@ -103,7 +106,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Solicitudes" asChild>
+                <SidebarMenuButton isActive={pathname.startsWith("/solicitudes")} tooltip="Solicitudes" asChild>
                   <Link href="/solicitudes">
                     <UserPlus />
                     <span>Solicitudes</span>
@@ -114,6 +117,14 @@ export function AppSidebar() {
                 <SidebarMenuButton tooltip="Reportes">
                   <BarChart3 />
                   <span>Reportes</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={pathname.startsWith("/herramientas")} tooltip="Herramientas" asChild>
+                  <Link href="/herramientas">
+                    <Wrench />
+                    <span>Herramientas</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -174,10 +185,13 @@ export function AppSidebar() {
           <Download className="size-4 shrink-0" />
           <span className="group-data-[collapsible=icon]:hidden">Exportar CSV</span>
         </Button>
+          <Link href="/configuracion">
         <Button variant="outline" size="sm" className="w-full justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+       
           <Settings className="size-4 shrink-0" />
           <span className="group-data-[collapsible=icon]:hidden">Configurar</span>
         </Button>
+          </Link>
       </SidebarFooter>
     </Sidebar>
   )

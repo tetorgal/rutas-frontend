@@ -5,10 +5,12 @@ import { cn } from "@/lib/utils";
 
 // 1. Import the global layout providers
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarRail, SidebarInset } from "@/components/ui/sidebar";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/themeProvider";
 import { Toaster } from "sonner";
+import { AppSidebar } from "@/components/built/Sidebar";
+import { AppHeader } from "@/components/built/Header";
 
 const dmSansHeading = DM_Sans({ subsets: ['latin'], variable: '--font-heading' });
 const raleway = Raleway({ subsets: ['latin'], variable: '--font-sans' });
@@ -39,7 +41,12 @@ export default function RootLayout({
 
         <TooltipProvider>
           <SidebarProvider className="min-h-svh bg-background">
-            {children}
+            <AppSidebar />
+            <SidebarRail />
+            <SidebarInset className="flex min-h-svh flex-col bg-transparent">
+              <AppHeader />
+              {children}
+            </SidebarInset>
           </SidebarProvider>
         </TooltipProvider>
 </Providers>

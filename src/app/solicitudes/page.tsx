@@ -13,16 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { SidebarInset, SidebarRail, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/built/Sidebar';
+
 import {
   UserCheck,
   UserX,
@@ -261,25 +252,7 @@ export default function SolicitudesWaitlistPage() {
 
   return (
     <>
-      <AppSidebar />
-      <SidebarRail />
-      <SidebarInset className="flex min-h-svh flex-col bg-transparent">
-        <header className="sticky top-2 z-20 flex h-14 items-center gap-2 border-b border-border/60 bg-background px-4 backdrop-blur-sm rounded-2xl mx-4">
-          <SidebarTrigger className="text-muted-foreground" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Solicitudes</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-
-        <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6 max-w-7xl w-full mx-auto">
+      <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6 max-w-7xl w-full mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex size-11 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
@@ -460,7 +433,6 @@ export default function SolicitudesWaitlistPage() {
             </div>
           </SheetContent>
         </Sheet>
-      </SidebarInset>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

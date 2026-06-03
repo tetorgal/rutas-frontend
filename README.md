@@ -1,3 +1,8 @@
+# Frontend - Supervisor de Rutas
+
+> [!IMPORTANT]
+> Para la guía de despliegue completa en producción (incluyendo la configuración de variables de entorno de Next.js, proxy reverso Nginx y PM2), por favor consulta el [README.md principal de la raíz](file:///Users/hector/Desktop/supervisor-rutas/README.md).
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

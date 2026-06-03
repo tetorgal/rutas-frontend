@@ -14,16 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { SidebarInset, SidebarRail, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/built/Sidebar';
+
 import { UserPlus, Users, CheckCircle, XCircle, Route } from 'lucide-react';
 import {
   AlertDialog,
@@ -35,6 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Lightweight form layout helpers
 function FieldGroup({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -208,25 +200,7 @@ export default function VendedoresPage() {
 
   return (
     <>
-      <AppSidebar />
-      <SidebarRail />
-      <SidebarInset className="flex min-h-svh flex-col bg-transparent">
-        <header className="sticky top-2 z-20 flex h-14 items-center gap-2 border-b border-border/60 bg-background px-4 backdrop-blur-sm rounded-2xl mx-4">
-          <SidebarTrigger className="text-muted-foreground" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Vendedores</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-
-        <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6 max-w-7xl w-full mx-auto">
+      <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6 max-w-7xl w-full mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex size-11 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
@@ -385,17 +359,34 @@ export default function VendedoresPage() {
 
                   <form.Field name="activo">
                     {(field) => (
-                      <label className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3 cursor-pointer hover:bg-muted/40 transition">
-                        <input
-                          type="checkbox"
-                          checked={!!field.state.value}
-                          onChange={(e) => field.handleChange(e.target.checked)}
-                          className="size-4 rounded border-border text-primary focus:ring-primary"
-                        />
-                        <div className="text-sm font-medium text-foreground">
-                          Vendedor activo (Autorizado para reportar ubicaciones)
-                        </div>
-                      </label>
+                      // <label className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3 cursor-pointer hover:bg-muted/40 transition">
+                      //   <input
+                      //     type="checkbox"
+                      //     checked={!!field.state.value}
+                      //     onChange={(e) => field.handleChange(e.target.checked)}
+                      //     className="size-4 rounded border-border text-primary focus:ring-primary"
+                      //   />
+                      //   <div className="text-sm font-medium text-foreground">
+                      //     Vendedor activo (Autorizado para reportar ubicaciones)
+                      //   </div>
+                      // </label>
+      <FieldGroup className="flex gap-2 items-center justify-start">
+
+        <Checkbox
+      className='size-4 rounded border-border text-primary focus:ring-primary'
+          onCheckedChange={(checked) => field.handleChange(checked === true)}
+          checked={field.state.value}
+          
+        />
+
+          <span className='text-tiny text-foreground'>
+
+   Vendedor activo 
+
+          </span>
+
+
+    </FieldGroup>
                     )}
                   </form.Field>
                 </div>
@@ -434,7 +425,6 @@ export default function VendedoresPage() {
             </div>
           </SheetContent>
         </Sheet>
-      </SidebarInset>
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
